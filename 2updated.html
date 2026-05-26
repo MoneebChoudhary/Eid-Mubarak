@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Letter of Apology</title>
+    <style>
+        :root {
+            --primary-soft: #f4e1d2;
+            --primary-dark: #d8a48f;
+            --accent-warm: #bc6c25;
+            --text-dark: #4a4a4a;
+            --text-light: #ffffff;
+            --white-translucent: rgba(255, 255, 255, 0.9);
+            --bg-grad: linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Georgia', serif;
+        }
+
+        body {
+            background: var(--bg-grad);
+            color: var(--text-dark);
+            min-height: 100vh;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        #loadingOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 1s ease;
+        }
+        #loadingOverlay.fade-out { opacity: 0; pointer-events: none; }
+
+        .page-container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+        }
+
+        /* Intro */
+        .intro-section {
+            text-align: center;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            animation: fadeIn 1.5s 1s ease forwards;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .eid-title {
+            font-size: 2.8rem;
+            color: var(--accent-warm);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .soft-prompt {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+
+        .scroll-down-btn {
+            background: var(--primary-dark);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .scroll-down-btn:hover { background: #b07e6b; transform: scale(1.05); }
+
+        /* Timeline Layout */
+        .timeline-section {
+            display: none;
+            padding-top: 50px;
+        }
+
+        .timeline-container {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline-container::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: var(--primary-soft);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 60px;
+            opacity: 0;
+            transition: all 1s ease;
+        }
+
+        .timeline-item.active { opacity: 1; transform: translateX(0); }
+        .timeline-item.hidden-left { transform: translateX(-20px); }
+        .timeline-item.hidden-right { transform: translateX(20px); }
+
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: -32px;
+            top: 5px;
+            width: 16px;
+            height: 16px;
+            background: var(--primary-dark);
+            border-radius: 50%;
+            box-shadow: 0 0 0 5px rgba(216, 164, 143, 0.3);
+            z-index: 2;
+        }
+
+        .timeline-content {
+            background: var(--white-translucent);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            line-height: 1.7;
+        }
+
+        .item-title {
+            color: var(--accent-warm);
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        /* 2-PAGE REAL OPEN BOOK DESIGN */
+        .book-container {
+            width: 100%;
+            margin: 30px 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .book {
+            position: relative;
+            width: 240px; /* Width when closed */
+            height: 320px;
+            background: #be8a62;
+            border-radius: 4px 12px 12px 4px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.15);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        /* When the book opens, it expands to fit two side-by-side pages */
+        .book.open {
+            width: 100%;
+            max-width: 560px;
+            background: #9c663c;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        .book-cover {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #bc6c25;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; font-size: 1.3rem; font-weight: bold;
+            z-index: 10;
+            transition: transform 0.8s ease, opacity 0.4s ease;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+            border-left: 5px solid #8f4f16;
+        }
+        .book-cover span { font-size: 0.9rem; font-weight: normal; margin-top: 10px; opacity: 0.8; }
+
+        /* Cover slides away smoothly to reveal standard reading layout */
+        .book.open .book-cover {
+            transform: translateX(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .pages-wrapper {
+            display: flex;
+            width: 100%; height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease 0.3s;
+            background: #f0e6df; /* Middle binding line color shadow */
+        }
+        .book.open .pages-wrapper { opacity: 1; }
+
+        .book-page {
+            flex: 1;
+            height: 100%;
+            background: #fffdf6;
+            padding: 20px;
+            font-size: 0.95rem;
+            color: #444;
+            line-height: 1.6;
+            overflow-y: auto;
+        }
+        .book-page.left {
+            border-right: 1px solid rgba(0,0,0,0.15);
+            box-shadow: inset -15px 0 20px rgba(0,0,0,0.05);
+            border-radius: 8px 0 0 8px;
+        }
+        .book-page.right {
+            box-shadow: inset 15px 0 20px rgba(0,0,0,0.05);
+            border-radius: 0 8px 8px 0;
+        }
+
+        /* Conclusion & Exploding Celebration Icons */
+        .conclusion {
+            text-align: center;
+            margin-top: 80px;
+            display: none;
+        }
+        .final-apology {
+            font-size: 1.8rem;
+            color: var(--accent-warm);
+            font-style: italic;
+            margin-bottom: 30px;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+        .heart-icon { 
+            font-size: 4rem; 
+            cursor: pointer; 
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+        .heart-icon:hover { transform: scale(1.15); }
+
+        /* Programmatic Falling Animation Styles */
+        @keyframes fall {
+            0% { transform: translateY(-50px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loadingOverlay">
+        <p style="color: #999; font-style: italic;">Wait a moment...</p>
+    </div>
+
+    <div class="page-container">
+
+        <div class="intro-section" id="intro">
+            <h1 class="eid-title">Eid Mubarak, FATIMA YASEEN✨</h1>
+            <p class="soft-prompt">I know things are hard right now, but I put this together for you.<br>Could you give me a few moments?</p>
+            <button class="scroll-down-btn" onclick="startTimeline()">Yes, I will listen.</button>
+        </div>
+
+        <div class="timeline-section" id="timeline">
+            <div class="timeline-container">
+
+                <div class="timeline-item hidden-left" id="step1">
+                    <div class="timeline-content">
+                        <p class="item-title">I remember where we left off...</p>
+                        <p>Things got tense, and I've spent every moment since then replaying it. I want to be completely open about what I was thinking.</p>
+                        
+                        <div class="book-container">
+                            <div class="book" id="myBook" onclick="openBook()">
+                                <div class="book-cover">
+                                    Open My Thoughts
+                                    <span>(Click to turn pages)</span>
+                                </div>
+                                <div class="pages-wrapper">
+                                    <div class="book-page left">
+                                        <strong>What Happened:</strong><br><br>
+                                        I’ve been doing a lot of thinking about our fight, and I want to be completely honest with you about why I've been acting differently lately. I'm not looking to make excuses, and I definitely don't blame you for being upset, you have every right to feel the way you do.
+
+The truth is, because you are my closest and only female friend, I realized that I was starting to get really attached to you or started liking you. Because of my past experience, it honestly scared me, and my instinct was to pull me back and try to conserve myself so things wouldn't get complicated.
+
+Please take all the time you need to reply to this. I just really needed to own up to my mistake and apologize sincerely.
+                                    </div>
+                                    <div class="book-page right">
+                                        <strong>My Realization:</strong><br><br>
+                                       In doing that, I completely lost sight of how it would affect you. Knowing what you’ve been through in your past, I hate that my actions made you feel ignored, avoided, or like I had suddenly changed on you. That was incredibly unfair to you, and I am truly sorry for the confusion and hurt I caused.
+
+I value our friendship so much, and you deserved consistency from me, not me shutting down. I wanted to tell you this plainly because you mean a lot to me, and I want to be transparent with you.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item hidden-right" id="step2">
+                    <div class="timeline-content">
+                        <p class="item-title">How your anger made me feel.</p>
+                        Seeing you so angry with me and knowing deep down that I am entirely the reason for it left me feeling completely hollow. It made me realize how much your presence matters in my daily life, and the silence between us since our fight has felt incredibly heavy.
+
+My biggest fear isn't just that you're mad at me, it's the painful realization that I actually became the person who hurt you and triggered the exact kind of pain you didn't deserve to experience again. It’s a deep, genuine regret that I've been carrying around, because losing your trust and seeing you hurt by my hands makes me feel so small (even smaller than you🥲[sorry😭] ). I value our friendship far more than any need to guard myself or be "right."
+                    </div>
+                </div>
+
+                <div class="timeline-item hidden-left" id="step3">
+                    <div class="timeline-content">
+                        <p class="item-title">The one thing that is certain:</p>
+                        <strong>I could never able to hurt you. While my actions were clumsy, ignorant, and deeply impulsive, they came from a place of my own fear, never from a desire to push you away or make you feel less than. What is absolutely certain to me right now is that your trust and our friendship are worth being brave for, and I never want to let my past dictate how I treat you ever again.
+                    </div>
+                </div>
+
+                <div class="timeline-item hidden-right" id="step4">
+                    <div class="timeline-content">
+                        <p class="item-title">I remember what you do.</p>
+                        <p>Whenever I get upset, you always know exactly how to fix it with things like cake, chocolates, stickers, real letters and others. I might not be able to get those to you right this second, but this page is my absolute best effort to build something unique just for you.</p>
+                        <p style="margin-top: 10px;">I made this to show you that I'm fully listening, and that I deeply care about keeping you around. 🌾</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="conclusion" id="conclusion">
+                <p class="final-apology" id="finalText">I am truly sorry.</p>
+                <div class="heart-icon" onclick="finalCelebrate()">💝</div>
+                <p style="font-size: 0.9rem; color: #999; margin-top: 10px;">(Tap the box to accept my apology and save Eid?)</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').classList.add('fade-out');
+            }, 800);
+        });
+
+        function startTimeline() {
+            document.getElementById('timeline').style.display = 'block';
+            document.getElementById('intro').style.display = 'none';
+            window.scrollTo(0, 0);
+            
+            setTimeout(() => { document.getElementById('step1').classList.add('active'); }, 200);
+            window.addEventListener('scroll', handleTimelineScroll);
+        }
+
+        // 2-Page Book Open/Close Toggle
+        function openBook() {
+            document.getElementById('myBook').classList.toggle('open');
+        }
+
+        function handleTimelineScroll() {
+            const items = ['step2', 'step3', 'step4'];
+            items.forEach(id => {
+                const item = document.getElementById(id);
+                if (item && !item.classList.contains('active')) {
+                    const rect = item.getBoundingClientRect();
+                    if (rect.top < window.innerHeight * 0.85) {
+                        item.classList.add('active');
+                    }
+                }
+            });
+
+            const conclusion = document.getElementById('conclusion');
+            const rect4 = document.getElementById('step4').getBoundingClientRect();
+            if (rect4.bottom < window.innerHeight * 0.6) {
+                conclusion.style.display = 'block';
+                setTimeout(() => { document.getElementById('finalText').style.opacity = 1; }, 300);
+            }
+        }
+
+        // FIX: Re-engineered completely solid falling item generator
+        function finalCelebrate() {
+            // Update Text
+            const textElement = document.getElementById('finalText');
+            textElement.innerText = "Thank you! Have a peaceful and blessed Eid. ✨";
+            textElement.style.color = "#bc6c25";
+            
+            // Pop effect on the icon itself
+            document.querySelector('.heart-icon').style.transform = "scale(1.3)";
+            setTimeout(() => { document.querySelector('.heart-icon').style.transform = "scale(1)"; }, 200);
+
+            // Generate Falling Treats Array
+            const elements = ['✨', '❤️', '🍫', '🍰', '🧁', '🌸'];
+            
+            for (let i = 0; i < 40; i++) {
+                const drop = document.createElement('div');
+                drop.innerText = elements[Math.floor(Math.random() * elements.length)];
+                
+                // Set custom unique layout styling parameters programmatically
+                drop.style.position = 'fixed';
+                drop.style.top = '-50px';
+                drop.style.left = Math.random() * 100 + 'vw';
+                drop.style.fontSize = (Math.random() * 24 + 16) + 'px';
+                drop.style.zIndex = '9999';
+                drop.style.pointerEvents = 'none';
+                
+                // Bind CSS native animation safely
+                const delay = Math.random() * 2;
+                const duration = Math.random() * 3 + 2;
+                drop.style.animation = `fall ${duration}s linear ${delay}s infinite`;
+                
+                document.body.appendChild(drop);
+                
+                // Clean up elements from memory safely after they fall past view window
+                setTimeout(() => {
+                    drop.remove();
+                }, (duration + delay) * 1000);
+            }
+        }
+    </script>
+</body>
+</html>
